@@ -11,6 +11,12 @@ Distributed platform for AI-powered architecture and security auditing of codeba
 - **Vector store:** Qdrant, using the `architecture_rules` collection with 384-dimensional cosine-distance vectors.
 - **Relational database:** PostgreSQL 16.
 
+## Architecture Decision Records
+
+Architecture Decision Records (ADRs) document the project's important architectural choices, their context, and their trade-offs. They help keep the implementation aligned with the intended design as the project evolves.
+
+The ADRs are maintained in [`docs/adr/`](docs/adr/). See the [ADR index](docs/adr/README.md) for the complete list. Each record is marked **Accepted** when the decision is reflected in the current design or code, or **Proposed** when it describes planned architecture that has not yet been implemented.
+
 ## Prerequisites
 
 - Docker and Docker Compose
