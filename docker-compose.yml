@@ -1,27 +1,31 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:16-alpine
-    container_name: as-sentinel-db
-    environment:
-      POSTGRES_DB: assentinel
-      POSTGRES_USER: devuser
-      POSTGRES_PASSWORD: devpassword
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
+  # Vectorial Database for storing embeddings and performing similarity searches
   qdrant:
     image: qdrant/qdrant:latest
     container_name: as-sentinel-qdrant
     ports:
-      - "6333:6333" # API REST / Dashboard
-      - "6334:6334" # gRPC
+      - "6333:6333" # Port API REST / Dashboard Web
+      - "6334:6334" # Port gRPC
     volumes:
-      - qdrant_data:/qdrant/storage
+      - qdrant_storage:/qdrant/storage
+    restart: unless-stopped
+
+  # Relational Database for the Java Core (Optional for now)
+  postgres:
+    image: postgres:16-alpine
+    container_name: as-sentinel-postgres
+    environment:
+      POSTGRES_DB: assentinel
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
 
 volumes:
+  qdrant_storage:
   postgres_data:
-  qdrant_data:
