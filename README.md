@@ -98,6 +98,16 @@ Interactive API documentation is available at `http://localhost:8000/docs`.
 | --- | --- | --- |
 | `GET` | `/api/v1/health` | Returns the core service health status. |
 
+The core service uses its HTTP client to consume the AI rules API. The base URL
+defaults to `http://localhost:8000` and can be overridden with the
+`AS_SENTINEL_AI_BASE_URL` environment variable (or the
+`as-sentinel.ai.base-url` Spring property). The client currently supports:
+
+| Method | Path | Client operation |
+| --- | --- | --- |
+| `GET` | `/api/v1/rules/health/qdrant` | Reads Qdrant connectivity and existing collections. |
+| `POST` | `/api/v1/rules/init-collection` | Ensures the architecture-rules collection exists. |
+
 ## Tests
 
 Run the AI service tests from `as-sentinel-ai`:

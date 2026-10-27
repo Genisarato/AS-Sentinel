@@ -16,3 +16,7 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+as-sentinel:
+  ai:
+    base-url: http://localhost:8000
