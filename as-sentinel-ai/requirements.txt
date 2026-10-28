@@ -5,3 +5,8 @@ pydantic>=2.6.0
 python-dotenv>=1.0.1
 httpx>=0.27.0
 pytest>=8.0.0
+sentence-transformers>=3.4.0
+
+# Install the CUDA-enabled PyTorch wheel for Python 3.11 and NVIDIA GPUs.
+--extra-index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124

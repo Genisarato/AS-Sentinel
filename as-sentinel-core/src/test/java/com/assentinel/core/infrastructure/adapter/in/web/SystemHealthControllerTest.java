@@ -1,4 +1,4 @@
-package com.assentinel.core.infrastructure.adapter.in.rest;
+package com.assentinel.core.infrastructure.adapter.in.web;
 
 import com.assentinel.core.domain.model.CollectionInitialization;
 import com.assentinel.core.domain.model.QdrantHealth;

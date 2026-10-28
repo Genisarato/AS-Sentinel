@@ -12,4 +12,4 @@ This directory records the architectural decisions for AS-Sentinel. The records 
 | [ADR-0006](./ADR-0006-rag-audit-pipeline.md) | Analyze repositories through a retrieval-augmented pipeline | Proposed |
 | [ADR-0007](./ADR-0007-security-baseline.md) | Apply layered security controls and OWASP-based audits | Proposed |
 | [ADR-0008](./ADR-0008-testing-strategy.md) | Validate services with unit, integration, and AI evaluation tests | Proposed |
-
+| [ADR-0009](./ADR-0009-gpu-acceleration-python-runtime.md) | Standardize the AI runtime and GPU-accelerated embeddings | Accepted |
