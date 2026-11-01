@@ -7,9 +7,14 @@ class Settings:
 
     # Qdrant configuration
     QDRANT_HOST: str = os.getenv("QDRANT_HOST", "localhost")
-    QDRANT_PORT: int = int(os.getenv("QDRANT_PORT", 6333))
+    QDRANT_PORT: int = int(os.getenv("QDRANT_PORT", "6333"))
     DEFAULT_COLLECTION: str = "architecture_rules"
-    VECTOR_SIZE: int = 384  # Embedding dimension (e.g., all-MiniLM-L6-v2)
+    EMBEDDING_MODEL: str = os.getenv(
+        "EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
+    )
+    VECTOR_SIZE: int = 384
+    SEARCH_LIMIT_MIN: int = 1
+    SEARCH_LIMIT_MAX: int = 50
 
 
 settings = Settings()

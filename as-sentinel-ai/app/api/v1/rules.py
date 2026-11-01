@@ -1,33 +1,37 @@
+import logging
 from typing import List, Optional
+
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
-from app.core.vector_store import QdrantVectorStore
-from app.vector_store.qdrant import (
-    get_qdrant_status,
-    init_rules_collection_store,
-)
+
+from app.vector_store.qdrant import vector_store
 
 router = APIRouter(prefix="/api/v1/rules", tags=["Architecture Rules"])
-vector_store = QdrantVectorStore()
+logger = logging.getLogger(__name__)
 
 
 class RuleIngestionRequest(BaseModel):
     rule_id: str = Field(
-        ..., description="Unique identifier for the rule (e.g., ADR-0001 or RULE-001)"
+        ...,
+        min_length=1,
+        max_length=200,
+        description="Unique identifier for the rule (e.g., ADR-0001 or RULE-001)",
     )
-    title: str = Field(..., description="Short title of the architectural rule")
+    title: str = Field(
+        ..., min_length=1, max_length=500, description="Short title of the architectural rule"
+    )
     description: str = Field(
-        ..., description="Detailed explanation of the rule, context, or constraint"
+        ...,
+        min_length=1,
+        max_length=100_000,
+        description="Detailed explanation of the rule, context, or constraint",
     )
     severity: str = Field(
         default="MEDIUM",
         description="Severity level: LOW, MEDIUM, HIGH, CRITICAL",
     )
     tags: List[str] = Field(
-        default=[], description="Categories like ['java', 'ddd', 'security']"
-    )
-    vector: Optional[List[float]] = Field(
-        default=None, description="Pre-computed embedding vector (optional)"
+        default_factory=list, description="Categories like ['java', 'ddd', 'security']"
     )
 
 
@@ -37,17 +41,37 @@ class RuleIngestionResponse(BaseModel):
     rule_id: str = Field(..., description="Associated rule identifier")
 
 
+class RuleSearchQuery(BaseModel):
+    query: str = Field(..., min_length=1, max_length=2_000)
+    limit: int = Field(default=3, ge=1, le=50)
+
+
+class RuleSearchResult(BaseModel):
+    rule_id: Optional[str]
+    title: Optional[str]
+    content: Optional[str]
+    category: Optional[str]
+    tags: List[str]
+    score: float
+
+
+class RuleSearchResponse(BaseModel):
+    query: str
+    results: List[RuleSearchResult]
+
+
 @router.get("/health/qdrant", status_code=status.HTTP_200_OK)
 def check_qdrant_health():
     """
     Health check endpoint to verify connection with Qdrant Vector Store.
     """
     try:
-        return get_qdrant_status()
-    except Exception as e:
+        return vector_store.get_status()
+    except Exception:
+        logger.exception("Qdrant health check failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to connect to Qdrant vector store: {str(e)}",
+            detail="Failed to connect to Qdrant vector store.",
         )
 
 
@@ -57,11 +81,13 @@ def init_rules_collection():
     Initializes the architecture rules vector collection in Qdrant.
     """
     try:
-        return init_rules_collection_store()
-    except Exception as e:
+        result = vector_store.init_collection()
+        return {"status": result, "collection": vector_store.collection_name}
+    except Exception:
+        logger.exception("Qdrant collection initialization failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to initialize collection: {str(e)}",
+            detail="Failed to initialize Qdrant collection.",
         )
 
 
@@ -76,15 +102,26 @@ def ingest_rule(request: RuleIngestionRequest):
             rule_id=request.rule_id,
             title=request.title,
             content=request.description,
-            category=request.severity
+            category=request.severity,
+            tags=request.tags,
         )
         return RuleIngestionResponse(
             status="indexed",
             point_id=point_id,
             rule_id=request.rule_id
         )
-    except Exception as e:
+    except Exception:
+        logger.exception("Rule ingestion failed for %s", request.rule_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to ingest rule '{request.rule_id}' into Qdrant: {str(e)}",
+            detail=f"Failed to ingest rule '{request.rule_id}' into Qdrant.",
         )
+
+
+@router.post("/search", response_model=RuleSearchResponse)
+def search_rules(payload: RuleSearchQuery):
+    """Semantic search endpoint to retrieve architecture rules from Qdrant."""
+    results = vector_store.search_similar_rules(
+        query=payload.query, limit=payload.limit
+    )
+    return {"query": payload.query, "results": results}

@@ -58,11 +58,23 @@ source .venv/bin/activate
 Then, from `as-sentinel-ai`, install dependencies and start the API:
 
 ```bash
-python -m pip install -r requirements.txt
+python -m pip install -r requirements-gpu.txt
 uvicorn app.main:app --reload
 ```
 
 The service listens on `http://localhost:8000`. It connects to Qdrant at `localhost:6333` by default. Override the connection with the `QDRANT_HOST` and `QDRANT_PORT` environment variables.
+
+For a CPU-only environment, install `requirements-cpu.txt` instead.
+
+To index all ADRs from `docs/adr/` into Qdrant, run this from the repository root
+after starting Qdrant:
+
+```powershell
+.\as-sentinel-ai\.venv\Scripts\python.exe .\as-sentinel-ai\scripts\ingest_adrs.py
+```
+
+The script creates the `architecture_rules` collection when needed and can
+ingest a different directory with `--adr-dir`.
 
 ### 3. Run the core service
 
@@ -115,6 +127,15 @@ Run the AI service tests from `as-sentinel-ai`:
 ```bash
 python -m pytest
 ```
+
+From the repository root, the same suite can be run with:
+
+```powershell
+.\as-sentinel-ai\.venv\Scripts\python.exe -m pytest -v
+```
+
+Tests marked `integration` require a running Qdrant instance. To run only
+validation and unit-level tests, use `pytest -m "not integration"`.
 
 Run the core service tests from `as-sentinel-core`:
 
