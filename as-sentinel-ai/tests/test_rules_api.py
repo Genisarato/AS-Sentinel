@@ -1,6 +1,10 @@
+from unittest.mock import Mock
+
 import pytest
 from fastapi.testclient import TestClient
+
 from app.main import app
+from app.api.v1 import rules
 
 client = TestClient(app)
 
@@ -79,3 +83,81 @@ def test_ingest_rejects_empty_description():
     )
 
     assert response.status_code == 422
+
+
+def test_ingest_accepts_all_fields_and_forwards_them(monkeypatch):
+    mocked_upsert = lambda **kwargs: "point-123"
+    monkeypatch.setattr(rules.vector_store, "upsert_rule", mocked_upsert)
+
+    response = client.post(
+        "/api/v1/rules/ingest",
+        json={
+            "rule_id": "RULE-123",
+            "title": "Repository boundary",
+            "description": "Use a repository abstraction.",
+            "severity": "HIGH",
+            "tags": ["ddd", "architecture"],
+        },
+    )
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "status": "indexed",
+        "point_id": "point-123",
+        "rule_id": "RULE-123",
+    }
+
+
+def test_ingest_returns_server_error_when_vector_store_fails(monkeypatch):
+    def fail(**kwargs):
+        raise RuntimeError("qdrant unavailable")
+
+    monkeypatch.setattr(rules.vector_store, "upsert_rule", fail)
+
+    response = client.post(
+        "/api/v1/rules/ingest",
+        json={
+            "rule_id": "RULE-FAIL",
+            "title": "Rule",
+            "description": "Description",
+        },
+    )
+
+    assert response.status_code == 500
+    assert response.json()["detail"] == "Failed to ingest rule 'RULE-FAIL' into Qdrant."
+
+
+def test_search_forwards_query_and_limit_and_returns_store_results(monkeypatch):
+    search = Mock(return_value=[{
+        "rule_id": "RULE-001",
+        "title": "Rule",
+        "content": "Content",
+        "category": "LOW",
+        "tags": [],
+        "score": 0.8,
+    }])
+    monkeypatch.setattr(rules.vector_store, "search_similar_rules", search)
+
+    response = client.post(
+        "/api/v1/rules/search",
+        json={"query": "repositories", "limit": 1},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["results"][0]["rule_id"] == "RULE-001"
+    search.assert_called_once_with(query="repositories", limit=1)
+
+
+@pytest.mark.parametrize(
+    ("payload", "field"),
+    [
+        ({"title": "Rule", "description": "Description"}, "rule_id"),
+        ({"rule_id": "RULE", "description": "Description"}, "title"),
+        ({"rule_id": "RULE", "title": "Rule"}, "description"),
+    ],
+)
+def test_ingest_requires_all_required_fields(payload, field):
+    response = client.post("/api/v1/rules/ingest", json=payload)
+
+    assert response.status_code == 422
+    assert any(error["loc"][-1] == field for error in response.json()["detail"])
