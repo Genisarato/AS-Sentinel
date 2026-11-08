@@ -14,3 +14,4 @@ This directory records the architectural decisions for AS-Sentinel. The records 
 | [ADR-0008](./ADR-0008-testing-strategy.md) | Validate services with unit, integration, and AI evaluation tests | Accepted |
 | [ADR-0009](./ADR-0009-gpu-acceleration-python-runtime.md) | Standardize the AI runtime and GPU-accelerated embeddings | Accepted |
 | [ADR-0010](./ADR-0010-embedding-ingestion-strategy.md) | Centralize embeddings and deterministic ADR ingestion | Accepted |
+| [ADR-0011](./ADR-0011-python-ast-structural-analysis.md) | Extract Python architecture metadata with the native AST | Accepted |

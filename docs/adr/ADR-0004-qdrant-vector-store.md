@@ -16,8 +16,11 @@ Use Qdrant as the vector store for the AI Engine. The initial `architecture_rule
 
 The embedding model and its production configuration remain undecided. Before indexing real data, the project must select an embedding model and keep its output dimensions and preprocessing consistent with the collection configuration.
 
+The Docker development environment currently uses Qdrant server `v1.15.5`.
+The Python service pins `qdrant-client` to the compatible `1.16.x` range so
+the client and server remain within the supported compatibility window.
+
 ## Consequences
 
 * **Positive:** Provides a dedicated vector-search service and keeps vector retrieval separate from relational project metadata.
 * **Negative/Risks:** Adds an operational dependency and requires collection lifecycle, embedding compatibility, persistence, and error handling to be managed. Changing vector dimensions or models may require reindexing.
-

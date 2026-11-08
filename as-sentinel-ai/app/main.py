@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from app.api.v1.rules import router as rules_router
+from app.api.v1.endpoints.ast import router as ast_router
 from app.core.config import settings
 
 app = FastAPI(
@@ -10,6 +11,7 @@ app = FastAPI(
 
 # Register API routers
 app.include_router(rules_router)
+app.include_router(ast_router, prefix="/api/v1/ast", tags=["AST Analysis"])
 
 
 @app.get("/")

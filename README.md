@@ -7,7 +7,7 @@ Distributed platform for AI-powered architecture and security auditing of codeba
 ## Architecture
 
 - **Core service (`as-sentinel-core`):** Java 21 and Spring Boot 4.1.1. Currently exposes a REST health endpoint and is configured to use PostgreSQL.
-- **AI service (`as-sentinel-ai`):** Python, FastAPI, and the Qdrant client. Provides service health checks and architecture-rule vector-store operations.
+- **AI service (`as-sentinel-ai`):** Python, FastAPI, and the Qdrant client. Provides service health checks, architecture-rule vector-store operations, and deterministic Python AST structure analysis.
 - **Vector store:** Qdrant, using the `architecture_rules` collection with 384-dimensional cosine-distance vectors.
 - **Relational database:** PostgreSQL 16.
 
@@ -76,6 +76,10 @@ after starting Qdrant:
 The script creates the `architecture_rules` collection when needed and can
 ingest a different directory with `--adr-dir`.
 
+The AI service uses `qdrant-client` from the `1.16.x` range because the local
+Docker Compose environment runs Qdrant server `v1.15.5`. Keep these versions
+aligned when changing the Qdrant image or Python dependency.
+
 ### 3. Run the core service
 
 With PostgreSQL running, start the Spring Boot application from `as-sentinel-core`:
@@ -101,6 +105,13 @@ The core service listens on `http://localhost:8080`.
 | `GET` | `/` | Checks that the AI service is running. |
 | `GET` | `/api/v1/rules/health/qdrant` | Checks the Qdrant connection and lists existing collections. |
 | `POST` | `/api/v1/rules/init-collection` | Creates the default architecture-rules collection if it does not exist. |
+| `POST` | `/api/v1/ast/structure` | Recursively scans a directory and extracts Python classes, methods, imports, and external dependencies. |
+
+The AST endpoint accepts a JSON body containing `directory_path`. It returns
+one result per Python file, including a per-file error when syntax or file
+access problems prevent parsing. The scanner ignores common generated or
+environment directories such as `.venv`, `__pycache__`, `.git`, `build`, and
+`dist`; it does not execute repository code.
 
 Interactive API documentation is available at `http://localhost:8000/docs`.
 
@@ -136,6 +147,9 @@ From the repository root, the same suite can be run with:
 
 Tests marked `integration` require a running Qdrant instance. To run only
 validation and unit-level tests, use `pytest -m "not integration"`.
+
+The AST parser and API tests run without Qdrant. Integration tests require the
+infrastructure from the Quickstart to be running.
 
 Run the core service tests from `as-sentinel-core`:
 
