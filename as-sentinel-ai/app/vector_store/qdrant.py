@@ -95,4 +95,19 @@ class QdrantVectorStore:
         ]
 
 
-vector_store = QdrantVectorStore()
+class _LazyQdrantVectorStore:
+    """Create the Qdrant store and embedding model only when first used."""
+
+    def __init__(self) -> None:
+        self._store: QdrantVectorStore | None = None
+
+    def _get_store(self) -> QdrantVectorStore:
+        if self._store is None:
+            self._store = QdrantVectorStore()
+        return self._store
+
+    def __getattr__(self, name: str):
+        return getattr(self._get_store(), name)
+
+
+vector_store = _LazyQdrantVectorStore()

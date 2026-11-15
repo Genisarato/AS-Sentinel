@@ -12,6 +12,8 @@ class Settings:
     EMBEDDING_MODEL: str = os.getenv(
         "EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
     )
+    OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL: str = os.getenv("OLLAMA_MODEL", "qwen2.5-coder:7b")
     VECTOR_SIZE: int = 384
     SEARCH_LIMIT_MIN: int = 1
     SEARCH_LIMIT_MAX: int = 50

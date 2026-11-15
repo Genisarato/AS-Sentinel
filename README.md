@@ -22,6 +22,7 @@ The ADRs are maintained in [`docs/adr/`](docs/adr/). See the [ADR index](docs/ad
 - Docker and Docker Compose
 - Python 3.10+
 - Java 21
+- Ollama for local architecture evaluation
 
 ## Quickstart
 
@@ -36,6 +37,27 @@ docker compose up -d
 The services are available at Qdrant's REST API on `http://localhost:6333`, its gRPC API on `localhost:6334`, and PostgreSQL on `localhost:5432`. The Compose file configures a local development database (`assentinel`) with the `postgres` user and `postgrespassword` password; do not use these credentials in production.
 
 ### 2. Run the AI service
+
+The architecture evaluator uses Ollama locally with the
+`qwen2.5-coder:7b` model. Install Ollama for Windows from
+<https://ollama.com/download/windows>, then download the model:
+
+```powershell
+ollama pull qwen2.5-coder:7b
+```
+
+Ollama normally starts its local server automatically. Verify the
+installation and model before starting the AI service:
+
+```powershell
+ollama list
+Invoke-RestMethod http://localhost:11434/api/tags
+```
+
+The evaluator calls Ollama's HTTP API at `http://localhost:11434`; no
+additional Python Ollama client is required because the AI service uses
+`httpx` directly. Keep Ollama running while evaluating files. Override the
+defaults with `OLLAMA_BASE_URL` and `OLLAMA_MODEL` when needed.
 
 From `as-sentinel-ai`, create and activate a virtual environment, then install dependencies:
 

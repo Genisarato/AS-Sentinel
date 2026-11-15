@@ -15,3 +15,4 @@ This directory records the architectural decisions for AS-Sentinel. The records 
 | [ADR-0009](./ADR-0009-gpu-acceleration-python-runtime.md) | Standardize the AI runtime and GPU-accelerated embeddings | Accepted |
 | [ADR-0010](./ADR-0010-embedding-ingestion-strategy.md) | Centralize embeddings and deterministic ADR ingestion | Accepted |
 | [ADR-0011](./ADR-0011-python-ast-structural-analysis.md) | Extract Python architecture metadata with the native AST | Accepted |
+| [ADR-0012](./ADR-0012-local-ollama-architecture-evaluation.md) | Use Ollama and Qwen2.5 Coder for local architecture evaluation | Accepted |
