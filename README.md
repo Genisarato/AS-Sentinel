@@ -128,6 +128,7 @@ The core service listens on `http://localhost:8080`.
 | `GET` | `/api/v1/rules/health/qdrant` | Checks the Qdrant connection and lists existing collections. |
 | `POST` | `/api/v1/rules/init-collection` | Creates the default architecture-rules collection if it does not exist. |
 | `POST` | `/api/v1/ast/structure` | Recursively scans a directory and extracts Python classes, methods, imports, and external dependencies. |
+| `POST` | `/api/v1/audit/` | Audits a Python project against the architectural rules retrieved from Qdrant and evaluated with Ollama. |
 
 The AST endpoint accepts a JSON body containing `directory_path`. It returns
 one result per Python file, including a per-file error when syntax or file
