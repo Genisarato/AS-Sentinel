@@ -57,7 +57,9 @@ jobs:
 
       - name: Run Maven tests
         working-directory: as-sentinel-core
-        run: ./mvnw test
+        run: |
+          chmod +x mvnw
+          ./mvnw test
 
   publish-images:
     name: Build and publish container images
