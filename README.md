@@ -11,6 +11,29 @@ Distributed platform for AI-powered architecture and security auditing of codeba
 - **Vector store:** Qdrant, using the `architecture_rules` collection with 384-dimensional cosine-distance vectors.
 - **Relational database:** PostgreSQL 16.
 
+```mermaid
+flowchart LR
+    Client["Client / UI / API consumer"]
+
+    subgraph Docker["Docker Compose"]
+        Core["Core<br/>Spring Boot / Java 21<br/>:8080"]
+        AI["AI Engine<br/>FastAPI / Python<br/>:8000"]
+        Postgres[("PostgreSQL 16<br/>:5432")]
+        Qdrant[("Qdrant 1.15.5<br/>:6333 / :6334")]
+    end
+
+    Ollama["Ollama on host<br/>qwen2.5-coder:7b<br/>:11434"]
+
+    Client -->|"HTTP"| Core
+    Client -->|"HTTP"| AI
+    Core <-->|"REST: http://ai:8000"| AI
+    Core -->|"JDBC"| Postgres
+    AI -->|"Qdrant HTTP API"| Qdrant
+    AI -->|"REST: host.docker.internal:11434"| Ollama
+```
+
+Docker Compose services communicate over the default compose network. Ollama remains on the host and is accessed from the AI container through `host.docker.internal:11434`.
+
 ## Architecture Decision Records
 
 Architecture Decision Records (ADRs) document the project's important architectural choices, their context, and their trade-offs. They help keep the implementation aligned with the intended design as the project evolves.
