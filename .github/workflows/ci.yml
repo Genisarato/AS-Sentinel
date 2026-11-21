@@ -10,6 +10,9 @@ permissions:
   contents: read
   packages: write
 
+env:
+  GHCR_OWNER: genisarato
+
 jobs:
   ai-tests:
     name: AI service tests
@@ -85,7 +88,7 @@ jobs:
         with:
           context: ./as-sentinel-ai
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/${{ github.repository_owner }}/as-sentinel-ai:latest,ghcr.io/${{ github.repository_owner }}/as-sentinel-ai:${{ github.sha }}
+          tags: ghcr.io/${{ env.GHCR_OWNER }}/as-sentinel-ai:latest,ghcr.io/${{ env.GHCR_OWNER }}/as-sentinel-ai:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -94,6 +97,6 @@ jobs:
         with:
           context: ./as-sentinel-core
           push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
-          tags: ghcr.io/${{ github.repository_owner }}/as-sentinel-core:latest,ghcr.io/${{ github.repository_owner }}/as-sentinel-core:${{ github.sha }}
+          tags: ghcr.io/${{ env.GHCR_OWNER }}/as-sentinel-core:latest,ghcr.io/${{ env.GHCR_OWNER }}/as-sentinel-core:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
