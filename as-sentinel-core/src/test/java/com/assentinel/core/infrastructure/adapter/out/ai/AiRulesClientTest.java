@@ -4,7 +4,6 @@ import com.assentinel.core.domain.model.CollectionInitialization;
 import com.assentinel.core.domain.model.QdrantHealth;
 import com.assentinel.core.domain.model.AuditRequest;
 import com.assentinel.core.domain.model.AuditReport;
-import com.assentinel.core.infrastructure.adapter.out.ai.dto.ProjectAuditResponse;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;

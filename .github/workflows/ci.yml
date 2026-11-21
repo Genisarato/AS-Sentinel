@@ -1,4 +1,4 @@
-name: AS-Sentinel AI Service CI
+name: AS-Sentinel CI/CD
 
 on:
   push:
@@ -6,8 +6,13 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
-  test:
+  ai-tests:
+    name: AI service tests
     runs-on: ubuntu-latest
 
     services:
@@ -32,4 +37,61 @@ jobs:
 
       - name: Run PyTest suite
         run: |
-          pytest -v
+          cd as-sentinel-ai
+          pytest -v tests
+
+  core-tests:
+    name: Core service tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: as-sentinel-core/pom.xml
+
+      - name: Run Maven tests
+        working-directory: as-sentinel-core
+        run: ./mvnw test
+
+  publish-images:
+    name: Build and publish container images
+    needs: [ ai-tests, core-tests ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push AI image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./as-sentinel-ai
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ghcr.io/${{ github.repository_owner }}/as-sentinel-ai:latest,ghcr.io/${{ github.repository_owner }}/as-sentinel-ai:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push core image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./as-sentinel-core
+          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+          tags: ghcr.io/${{ github.repository_owner }}/as-sentinel-core:latest,ghcr.io/${{ github.repository_owner }}/as-sentinel-core:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
