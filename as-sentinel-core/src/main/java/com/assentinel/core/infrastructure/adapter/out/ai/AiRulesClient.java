@@ -4,7 +4,7 @@ import com.assentinel.core.domain.model.CollectionInitialization;
 import com.assentinel.core.domain.model.QdrantHealth;
 import com.assentinel.core.domain.model.AuditRequest;
 import com.assentinel.core.domain.model.AuditReport;
-import com.assentinel.core.domain.model.FileAuditResult;
+import com.assentinel.core.domain.model.Finding;
 import com.assentinel.core.domain.model.RuleViolation;
 import com.assentinel.core.domain.port.out.ArchitectureRulesPort;
 import com.assentinel.core.infrastructure.adapter.out.ai.dto.CollectionInitializationResponse;
@@ -56,8 +56,8 @@ public class AiRulesClient implements ArchitectureRulesPort {
                 .retrieve()
                 .body(ProjectAuditResponse.class), "project audit");
 
-        List<FileAuditResult> results = response.results().stream()
-                .map(file -> new FileAuditResult(
+        List<Finding> findings = response.results().stream()
+                .map(file -> new Finding(
                         file.filePath(),
                         file.compliant(),
                         file.violations().stream()
@@ -74,7 +74,7 @@ public class AiRulesClient implements ArchitectureRulesPort {
                 response.totalFilesScanned(),
                 response.totalViolations(),
                 response.projectCompliant(),
-                results);
+                findings);
     }
 
     private static <T> T responseOrThrow(T response, String operation) {

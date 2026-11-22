@@ -7,5 +7,5 @@ public record AuditReport(
     int totalFilesScanned,
     int totalViolations,
     boolean projectCompliant,
-    List<FileAuditResult> results
+    List<Finding> findings
 ) {}
