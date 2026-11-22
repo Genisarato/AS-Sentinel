@@ -2,6 +2,7 @@ package com.assentinel.core.infrastructure.adapter.in.rest;
 
 import com.assentinel.core.application.exception.ProjectNotFoundException;
 import com.assentinel.core.application.exception.AiServiceUnavailableException;
+import com.assentinel.core.application.exception.AuditRunNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,6 +23,12 @@ public class RestExceptionHandler {
     @ExceptionHandler(AiServiceUnavailableException.class)
     public ResponseEntity<Map<String, String>> handleAiUnavailable(AiServiceUnavailableException exception) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(Map.of("error", exception.getMessage()));
+    }
+
+    @ExceptionHandler(AuditRunNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleAuditRunNotFound(AuditRunNotFoundException exception) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(Map.of("error", exception.getMessage()));
     }
 

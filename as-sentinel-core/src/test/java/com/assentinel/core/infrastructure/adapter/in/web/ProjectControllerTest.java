@@ -20,6 +20,7 @@ import java.util.UUID;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -121,5 +122,34 @@ class ProjectControllerTest {
                                 """))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    void listsAuditsForProject() throws Exception {
+        UUID id = UUID.randomUUID();
+        given(runProjectAuditUseCase.findByProjectId(id)).willReturn(java.util.List.of());
+
+        mockMvc.perform(get("/api/v1/projects/{id}/audits", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+    }
+
+    @Test
+    void getsOneAuditForProject() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        UUID auditId = UUID.randomUUID();
+        AuditRun auditRun = new AuditRun(
+                auditId,
+                projectId,
+                Instant.parse("2026-11-22T09:41:00Z"),
+                new AuditReport("/workspace/project", 1, 0, true, java.util.List.of()));
+        given(runProjectAuditUseCase.findByProjectAndId(projectId, auditId))
+                .willReturn(auditRun);
+
+        mockMvc.perform(get("/api/v1/projects/{id}/audits/{auditId}", projectId, auditId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(auditId.toString()))
+                .andExpect(jsonPath("$.projectId").value(projectId.toString()));
     }
 }

@@ -171,6 +171,8 @@ Interactive API documentation is available at `http://localhost:8000/docs`.
 | `GET` | `/api/v1/projects` | Lists projects stored in PostgreSQL. |
 | `GET` | `/api/v1/projects/{id}` | Retrieves a project by ID. |
 | `POST` | `/api/v1/projects/{id}/audits` | Runs and persists an audit for a project. |
+| `GET` | `/api/v1/projects/{id}/audits` | Lists audit runs for a project. |
+| `GET` | `/api/v1/projects/{id}/audits/{auditId}` | Retrieves an audit run belonging to a project. |
 
 The core service uses its HTTP client to consume the AI rules API. The base URL
 defaults to `http://localhost:8000` and can be overridden with the

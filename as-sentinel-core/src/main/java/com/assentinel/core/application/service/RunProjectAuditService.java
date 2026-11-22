@@ -11,7 +11,9 @@ import com.assentinel.core.domain.port.out.ProjectRepositoryPort;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
+import com.assentinel.core.application.exception.AuditRunNotFoundException;
 
 @Service
 public class RunProjectAuditService implements RunProjectAuditUseCase {
@@ -43,5 +45,23 @@ public class RunProjectAuditService implements RunProjectAuditUseCase {
                 report);
 
         return auditRunRepositoryPort.save(auditRun);
+    }
+
+    @Override
+    public List<AuditRun> findByProjectId(UUID projectId) {
+        projectRepositoryPort.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        return auditRunRepositoryPort.findByProjectId(projectId);
+    }
+
+    @Override
+    public AuditRun findByProjectAndId(UUID projectId, UUID auditId) {
+        projectRepositoryPort.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        return auditRunRepositoryPort.findById(auditId)
+                .filter(auditRun -> auditRun.projectId().equals(projectId))
+                .orElseThrow(() -> new AuditRunNotFoundException(projectId, auditId));
     }
 }

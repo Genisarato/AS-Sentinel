@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -22,6 +23,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import com.assentinel.core.application.exception.AuditRunNotFoundException;
 
 class RunProjectAuditServiceTest {
 
@@ -72,5 +74,43 @@ class RunProjectAuditServiceTest {
 
         verify(architectureRules, never()).auditProject(any(AuditRequest.class));
         verify(auditRunRepository, never()).save(any(AuditRun.class));
+    }
+
+    @Test
+    void listsAuditsOnlyForExistingProject() {
+        UUID projectId = UUID.randomUUID();
+        Project project = new Project(
+                projectId,
+                "AS-Sentinel",
+                "https://github.com/example/as-sentinel",
+                Instant.now());
+        given(projectRepository.findById(projectId)).willReturn(Optional.of(project));
+        given(auditRunRepository.findByProjectId(projectId)).willReturn(List.of());
+
+        assertThat(service.findByProjectId(projectId)).isEmpty();
+        verify(auditRunRepository).findByProjectId(projectId);
+    }
+
+    @Test
+    void rejectsAuditRunThatBelongsToAnotherProject() {
+        UUID projectId = UUID.randomUUID();
+        UUID auditId = UUID.randomUUID();
+        UUID otherProjectId = UUID.randomUUID();
+        Project project = new Project(
+                projectId,
+                "AS-Sentinel",
+                "https://github.com/example/as-sentinel",
+                Instant.now());
+        AuditRun auditRun = new AuditRun(
+                auditId,
+                otherProjectId,
+                Instant.now(),
+                new AuditReport("/workspace/project", 0, 0, true, List.of()));
+
+        given(projectRepository.findById(projectId)).willReturn(Optional.of(project));
+        given(auditRunRepository.findById(auditId)).willReturn(Optional.of(auditRun));
+
+        assertThatThrownBy(() -> service.findByProjectAndId(projectId, auditId))
+                .isInstanceOf(AuditRunNotFoundException.class);
     }
 }

@@ -68,4 +68,17 @@ public class ProjectController {
         AuditRun auditRun = runProjectAuditUseCase.execute(id, auditRequest);
         return ResponseEntity.status(HttpStatus.CREATED).body(auditRun);
     }
+
+    @GetMapping("/{id}/audits")
+    public List<AuditRun> findAudits(@PathVariable UUID id) {
+        return runProjectAuditUseCase.findByProjectId(id);
+    }
+
+    @GetMapping("/{id}/audits/{auditId}")
+    public AuditRun findAudit(
+        @PathVariable UUID id,
+        @PathVariable UUID auditId
+    ) {
+        return runProjectAuditUseCase.findByProjectAndId(id, auditId);
+    }
 }
