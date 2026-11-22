@@ -3,6 +3,7 @@ package com.assentinel.core.infrastructure.adapter.in.rest;
 import com.assentinel.core.application.exception.ProjectNotFoundException;
 import com.assentinel.core.application.exception.AiServiceUnavailableException;
 import com.assentinel.core.application.exception.AuditRunNotFoundException;
+import com.assentinel.core.application.exception.RepositoryScanConfigurationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -29,6 +30,14 @@ public class RestExceptionHandler {
     @ExceptionHandler(AuditRunNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleAuditRunNotFound(AuditRunNotFoundException exception) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", exception.getMessage()));
+    }
+
+    @ExceptionHandler(RepositoryScanConfigurationException.class)
+    public ResponseEntity<Map<String, String>> handleRepositoryScanConfiguration(
+        RepositoryScanConfigurationException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(Map.of("error", exception.getMessage()));
     }
 

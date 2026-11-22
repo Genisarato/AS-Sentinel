@@ -8,6 +8,7 @@ import java.util.List;
 
 public interface RunProjectAuditUseCase {
     AuditRun execute(UUID projectId, AuditRequest request);
+    AuditRun executeWithConfiguration(UUID projectId);
     List<AuditRun> findByProjectId(UUID projectId);
     AuditRun findByProjectAndId(UUID projectId, UUID auditId);
 }

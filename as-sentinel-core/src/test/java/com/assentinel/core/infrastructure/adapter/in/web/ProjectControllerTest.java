@@ -2,7 +2,12 @@ package com.assentinel.core.infrastructure.adapter.in.web;
 
 import com.assentinel.core.application.port.in.ProjectUseCase;
 import com.assentinel.core.application.port.in.RunProjectAuditUseCase;
+import com.assentinel.core.application.port.in.RepositorySourceUseCase;
+import com.assentinel.core.application.port.in.ScanConfigUseCase;
 import com.assentinel.core.application.exception.ProjectNotFoundException;
+import com.assentinel.core.domain.model.RepositorySource;
+import com.assentinel.core.domain.model.RepositorySourceStatus;
+import com.assentinel.core.domain.model.ScanConfig;
 import com.assentinel.core.domain.model.AuditReport;
 import com.assentinel.core.domain.model.AuditRun;
 import com.assentinel.core.domain.model.AuditRequest;
@@ -19,6 +24,8 @@ import java.util.UUID;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -36,6 +43,12 @@ class ProjectControllerTest {
 
     @MockitoBean
     private RunProjectAuditUseCase runProjectAuditUseCase;
+
+    @MockitoBean
+    private RepositorySourceUseCase repositorySourceUseCase;
+
+    @MockitoBean
+    private ScanConfigUseCase scanConfigUseCase;
 
     @Test
     void createsProject() throws Exception {
@@ -151,5 +164,96 @@ class ProjectControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(auditId.toString()))
                 .andExpect(jsonPath("$.projectId").value(projectId.toString()));
+    }
+
+    @Test
+    void configuresRepositorySource() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        RepositorySource source = new RepositorySource(
+                UUID.randomUUID(),
+                projectId,
+                "https://github.com/example/as-sentinel",
+                "main",
+                "/workspace/as-sentinel",
+                RepositorySourceStatus.CONFIGURED,
+                Instant.now());
+        given(repositorySourceUseCase.configure(
+                projectId,
+                "https://github.com/example/as-sentinel",
+                "main",
+                "/workspace/as-sentinel"))
+                .willReturn(source);
+
+        mockMvc.perform(put("/api/v1/projects/{id}/repository-source", projectId)
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "repositoryUrl": "https://github.com/example/as-sentinel",
+                                  "branch": "main",
+                                  "localDirectory": "/workspace/as-sentinel"
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.repositoryUrl")
+                        .value("https://github.com/example/as-sentinel"))
+                .andExpect(jsonPath("$.status").value("CONFIGURED"));
+    }
+
+    @Test
+    void configuresScanConfig() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        ScanConfig config = new ScanConfig(
+                UUID.randomUUID(),
+                projectId,
+                java.util.List.of(".java", ".py"),
+                java.util.List.of(".git", "target"),
+                5,
+                0.45,
+                Instant.now());
+        given(scanConfigUseCase.configure(
+                projectId,
+                java.util.List.of(".java", ".py"),
+                java.util.List.of(".git", "target"),
+                5,
+                0.45))
+                .willReturn(config);
+
+        mockMvc.perform(put("/api/v1/projects/{id}/scan-config", projectId)
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "extensions": [".java", ".py"],
+                                  "exclusions": [".git", "target"],
+                                  "topKRules": 5,
+                                  "scoreThreshold": 0.45
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.topKRules").value(5))
+                .andExpect(jsonPath("$.scoreThreshold").value(0.45))
+                .andExpect(jsonPath("$.extensions").isArray());
+    }
+
+    @Test
+    void runsConfiguredAuditForProject() throws Exception {
+        UUID projectId = UUID.randomUUID();
+        AuditRun auditRun = new AuditRun(
+                UUID.randomUUID(),
+                projectId,
+                Instant.now(),
+                new AuditReport(
+                        "/workspace/as-sentinel",
+                        1,
+                        0,
+                        true,
+                        java.util.List.of()));
+        given(runProjectAuditUseCase.executeWithConfiguration(projectId))
+                .willReturn(auditRun);
+
+        mockMvc.perform(post("/api/v1/projects/{id}/audits/configured", projectId))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.projectId").value(projectId.toString()))
+                .andExpect(jsonPath("$.report.directoryPath")
+                        .value("/workspace/as-sentinel"));
     }
 }

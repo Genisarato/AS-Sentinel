@@ -14,6 +14,12 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 import com.assentinel.core.application.exception.AuditRunNotFoundException;
+import com.assentinel.core.application.exception.RepositoryScanConfigurationException;
+import com.assentinel.core.domain.model.RepositorySource;
+import com.assentinel.core.domain.model.ScanConfig;
+import com.assentinel.core.domain.model.RepositorySourceStatus;
+import com.assentinel.core.domain.port.out.RepositorySourceRepositoryPort;
+import com.assentinel.core.domain.port.out.ScanConfigRepositoryPort;
 
 @Service
 public class RunProjectAuditService implements RunProjectAuditUseCase {
@@ -21,15 +27,21 @@ public class RunProjectAuditService implements RunProjectAuditUseCase {
     private final ProjectRepositoryPort projectRepositoryPort;
     private final ArchitectureRulesPort architectureRulesPort;
     private final AuditRunRepositoryPort auditRunRepositoryPort;
+    private final RepositorySourceRepositoryPort repositorySourceRepositoryPort;
+    private final ScanConfigRepositoryPort scanConfigRepositoryPort;
 
     public RunProjectAuditService(
         ProjectRepositoryPort projectRepositoryPort,
         ArchitectureRulesPort architectureRulesPort,
-        AuditRunRepositoryPort auditRunRepositoryPort
+        AuditRunRepositoryPort auditRunRepositoryPort,
+        RepositorySourceRepositoryPort repositorySourceRepositoryPort,
+        ScanConfigRepositoryPort scanConfigRepositoryPort
     ) {
         this.projectRepositoryPort = projectRepositoryPort;
         this.architectureRulesPort = architectureRulesPort;
         this.auditRunRepositoryPort = auditRunRepositoryPort;
+        this.repositorySourceRepositoryPort = repositorySourceRepositoryPort;
+        this.scanConfigRepositoryPort = scanConfigRepositoryPort;
     }
 
     @Override
@@ -44,6 +56,40 @@ public class RunProjectAuditService implements RunProjectAuditUseCase {
                 Instant.now(),
                 report);
 
+        return auditRunRepositoryPort.save(auditRun);
+    }
+
+    @Override
+    public AuditRun executeWithConfiguration(UUID projectId) {
+        projectRepositoryPort.findById(projectId)
+                .orElseThrow(() -> new ProjectNotFoundException(projectId));
+
+        RepositorySource source = repositorySourceRepositoryPort.findByProjectId(projectId)
+                .orElseThrow(() -> new RepositoryScanConfigurationException(
+                        projectId, "repository source is missing"));
+        ScanConfig config = scanConfigRepositoryPort.findByProjectId(projectId)
+                .orElseThrow(() -> new RepositoryScanConfigurationException(
+                        projectId, "scan config is missing"));
+
+        if (source.status() != RepositorySourceStatus.CLONED) {
+            throw new RepositoryScanConfigurationException(
+                    projectId, "repository source must be CLONED");
+        }
+        if (source.localDirectory() == null || source.localDirectory().isBlank()) {
+            throw new RepositoryScanConfigurationException(
+                    projectId, "local directory is missing");
+        }
+
+        AuditRequest request = new AuditRequest(
+                source.localDirectory(),
+                config.topKRules(),
+                config.scoreThreshold());
+        AuditReport report = architectureRulesPort.auditProject(request);
+        AuditRun auditRun = new AuditRun(
+                UUID.randomUUID(),
+                projectId,
+                Instant.now(),
+                report);
         return auditRunRepositoryPort.save(auditRun);
     }
 

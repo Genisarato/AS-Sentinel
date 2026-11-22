@@ -173,6 +173,14 @@ Interactive API documentation is available at `http://localhost:8000/docs`.
 | `POST` | `/api/v1/projects/{id}/audits` | Runs and persists an audit for a project. |
 | `GET` | `/api/v1/projects/{id}/audits` | Lists audit runs for a project. |
 | `GET` | `/api/v1/projects/{id}/audits/{auditId}` | Retrieves an audit run belonging to a project. |
+| `PUT` | `/api/v1/projects/{id}/repository-source` | Configures or replaces a project's repository source. |
+| `GET` | `/api/v1/projects/{id}/repository-source` | Retrieves a project's repository source. |
+| `PATCH` | `/api/v1/projects/{id}/repository-source/status` | Updates repository source status. |
+| `PUT` | `/api/v1/projects/{id}/scan-config` | Configures or replaces a project's scan settings. |
+| `GET` | `/api/v1/projects/{id}/scan-config` | Retrieves a project's scan settings. |
+| `DELETE` | `/api/v1/projects/{id}/scan-config` | Deletes a project's scan settings. |
+| `DELETE` | `/api/v1/projects/{id}/repository-source` | Deletes a project's repository source. |
+| `POST` | `/api/v1/projects/{id}/audits/configured` | Runs an audit using the persisted repository source and scan config. |
 
 The core service uses its HTTP client to consume the AI rules API. The base URL
 defaults to `http://localhost:8000` and can be overridden with the
