@@ -1,5 +1,6 @@
 package com.assentinel.core.infrastructure.adapter.out.ai;
 
+import com.assentinel.core.application.exception.AiServiceUnavailableException;
 import com.assentinel.core.domain.model.CollectionInitialization;
 import com.assentinel.core.domain.model.QdrantHealth;
 import com.assentinel.core.domain.model.AuditRequest;
@@ -12,6 +13,7 @@ import com.assentinel.core.infrastructure.adapter.out.ai.dto.ProjectAuditRequest
 import com.assentinel.core.infrastructure.adapter.out.ai.dto.ProjectAuditResponse;
 import com.assentinel.core.infrastructure.adapter.out.ai.dto.QdrantHealthResponse;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClient;
 
 import java.util.List;
@@ -27,20 +29,24 @@ public class AiRulesClient implements ArchitectureRulesPort {
 
     @Override
     public QdrantHealth getQdrantHealth() {
-        QdrantHealthResponse response = responseOrThrow(aiRestClient.get()
-                .uri("/api/v1/rules/health/qdrant")
-                .retrieve()
-                .body(QdrantHealthResponse.class), "Qdrant health");
+        QdrantHealthResponse response = executeAiRequest(
+                () -> responseOrThrow(aiRestClient.get()
+                        .uri("/api/v1/rules/health/qdrant")
+                        .retrieve()
+                        .body(QdrantHealthResponse.class), "Qdrant health"),
+                "Qdrant health");
 
         return new QdrantHealth(response.qdrantStatus(), response.existingCollections());
     }
 
     @Override
     public CollectionInitialization initializeRulesCollection() {
-        CollectionInitializationResponse response = responseOrThrow(aiRestClient.post()
-                .uri("/api/v1/rules/init-collection")
-                .retrieve()
-                .body(CollectionInitializationResponse.class), "collection initialization");
+        CollectionInitializationResponse response = executeAiRequest(
+                () -> responseOrThrow(aiRestClient.post()
+                        .uri("/api/v1/rules/init-collection")
+                        .retrieve()
+                        .body(CollectionInitializationResponse.class), "collection initialization"),
+                "collection initialization");
 
         return new CollectionInitialization(response.status(), response.collection());
     }
@@ -50,11 +56,13 @@ public class AiRulesClient implements ArchitectureRulesPort {
         ProjectAuditRequest aiRequest = new ProjectAuditRequest(
                 request.directoryPath(), request.topKRules(), request.scoreThreshold());
 
-        ProjectAuditResponse response = responseOrThrow(aiRestClient.post()
-                .uri("/api/v1/audit/")
-                .body(aiRequest)
-                .retrieve()
-                .body(ProjectAuditResponse.class), "project audit");
+        ProjectAuditResponse response = executeAiRequest(
+                () -> responseOrThrow(aiRestClient.post()
+                        .uri("/api/v1/audit/")
+                        .body(aiRequest)
+                        .retrieve()
+                        .body(ProjectAuditResponse.class), "project audit"),
+                "project audit");
 
         List<Finding> findings = response.results().stream()
                 .map(file -> new Finding(
@@ -82,5 +90,15 @@ public class AiRulesClient implements ArchitectureRulesPort {
             throw new IllegalStateException("AI service returned an empty " + operation + " response");
         }
         return response;
+    }
+
+    private <T> T executeAiRequest(java.util.concurrent.Callable<T> request, String operation) {
+        try {
+            return request.call();
+        } catch (RestClientException | IllegalStateException exception) {
+            throw new AiServiceUnavailableException();
+        } catch (Exception exception) {
+            throw new AiServiceUnavailableException();
+        }
     }
 }

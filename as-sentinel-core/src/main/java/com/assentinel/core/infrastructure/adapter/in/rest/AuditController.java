@@ -4,6 +4,7 @@ import com.assentinel.core.application.port.in.AuditProjectUseCase;
 import com.assentinel.core.domain.model.AuditReport;
 import com.assentinel.core.domain.model.AuditRequest;
 import com.assentinel.core.infrastructure.adapter.in.rest.dto.AuditProjectRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,7 +22,7 @@ public class AuditController {
     }
 
     @PostMapping
-    public ResponseEntity<AuditReport> auditProject(@RequestBody AuditProjectRequest request) {
+    public ResponseEntity<AuditReport> auditProject(@Valid @RequestBody AuditProjectRequest request) {
         AuditRequest auditRequest = request.topKRules() == null || request.scoreThreshold() == null
                 ? new AuditRequest(request.directoryPath())
                 : new AuditRequest(

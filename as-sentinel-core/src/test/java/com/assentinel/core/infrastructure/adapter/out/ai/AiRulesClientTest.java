@@ -4,6 +4,7 @@ import com.assentinel.core.domain.model.CollectionInitialization;
 import com.assentinel.core.domain.model.QdrantHealth;
 import com.assentinel.core.domain.model.AuditRequest;
 import com.assentinel.core.domain.model.AuditReport;
+import com.assentinel.core.application.exception.AiServiceUnavailableException;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -12,6 +13,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
@@ -95,6 +97,18 @@ class AiRulesClientTest {
 
         assertThat(response.status()).isEqualTo("already_exists");
         assertThat(response.collection()).isEqualTo("architecture_rules");
+        server.verify();
+    }
+
+    @Test
+    void returnsAiUnavailableWhenAuditServiceFails() {
+        server.expect(requestTo("http://localhost:8000/api/v1/audit/"))
+                .andExpect(method(HttpMethod.POST))
+                .andRespond(withSuccess("not-json", MediaType.APPLICATION_JSON));
+
+        assertThatThrownBy(() -> client.auditProject(
+                new AuditRequest("/workspace/project")))
+                .isInstanceOf(AiServiceUnavailableException.class);
         server.verify();
     }
 }

@@ -1,8 +1,13 @@
 package com.assentinel.core.infrastructure.adapter.in.rest;
 
 import com.assentinel.core.application.port.in.ProjectUseCase;
+import com.assentinel.core.application.port.in.RunProjectAuditUseCase;
+import com.assentinel.core.domain.model.AuditRequest;
+import com.assentinel.core.domain.model.AuditRun;
 import com.assentinel.core.domain.model.Project;
+import com.assentinel.core.infrastructure.adapter.in.rest.dto.AuditProjectRequest;
 import com.assentinel.core.infrastructure.adapter.in.rest.dto.CreateProjectRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -20,13 +25,18 @@ import java.util.UUID;
 public class ProjectController {
 
     private final ProjectUseCase projectUseCase;
+    private final RunProjectAuditUseCase runProjectAuditUseCase;
 
-    public ProjectController(ProjectUseCase projectUseCase) {
+    public ProjectController(
+        ProjectUseCase projectUseCase,
+        RunProjectAuditUseCase runProjectAuditUseCase
+    ) {
         this.projectUseCase = projectUseCase;
+        this.runProjectAuditUseCase = runProjectAuditUseCase;
     }
 
     @PostMapping
-    public ResponseEntity<Project> create(@RequestBody CreateProjectRequest request) {
+    public ResponseEntity<Project> create(@Valid @RequestBody CreateProjectRequest request) {
         Project project = projectUseCase.create(request.name(), request.repositoryUrl());
         return ResponseEntity.status(HttpStatus.CREATED).body(project);
     }
@@ -41,5 +51,21 @@ public class ProjectController {
         return projectUseCase.findById(id)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/{id}/audits")
+    public ResponseEntity<AuditRun> runAudit(
+        @PathVariable UUID id,
+        @Valid @RequestBody AuditProjectRequest request
+    ) {
+        AuditRequest auditRequest = request.topKRules() == null || request.scoreThreshold() == null
+                ? new AuditRequest(request.directoryPath())
+                : new AuditRequest(
+                        request.directoryPath(),
+                        request.topKRules(),
+                        request.scoreThreshold());
+
+        AuditRun auditRun = runProjectAuditUseCase.execute(id, auditRequest);
+        return ResponseEntity.status(HttpStatus.CREATED).body(auditRun);
     }
 }

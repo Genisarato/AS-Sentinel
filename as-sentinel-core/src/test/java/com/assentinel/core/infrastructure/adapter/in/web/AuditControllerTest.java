@@ -1,6 +1,7 @@
 package com.assentinel.core.infrastructure.adapter.in.web;
 
 import com.assentinel.core.application.port.in.AuditProjectUseCase;
+import com.assentinel.core.application.exception.AiServiceUnavailableException;
 import com.assentinel.core.domain.model.AuditReport;
 import com.assentinel.core.domain.model.AuditRequest;
 import com.assentinel.core.infrastructure.adapter.in.rest.AuditController;
@@ -54,5 +55,36 @@ class AuditControllerTest {
         verify(auditProjectUseCase).execute(captor.capture());
         assertThat(captor.getValue().topKRules()).isEqualTo(3);
         assertThat(captor.getValue().scoreThreshold()).isEqualTo(0.35);
+    }
+
+    @Test
+    void rejectsInvalidAuditOptions() throws Exception {
+        mockMvc.perform(post("/api/v1/audits")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "directoryPath": "/workspace/project",
+                                  "topKRules": 0,
+                                  "scoreThreshold": 1.5
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").exists());
+    }
+
+    @Test
+    void returnsServiceUnavailableWhenAiIsDown() throws Exception {
+        given(auditProjectUseCase.execute(org.mockito.ArgumentMatchers.any(AuditRequest.class)))
+                .willThrow(new AiServiceUnavailableException());
+
+        mockMvc.perform(post("/api/v1/audits")
+                        .contentType("application/json")
+                        .content("""
+                                {
+                                  "directoryPath": "/workspace/project"
+                                }
+                                """))
+                .andExpect(status().isServiceUnavailable())
+                .andExpect(jsonPath("$.error").value("The AI service is unavailable"));
     }
 }
